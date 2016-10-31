@@ -185,10 +185,12 @@ class Player extends GameObject {
 
 class Enemy extends GameObject {
   constructor(context) {
-    super(context, 0, 0, '#E8D153')
+    super(context, 0, 0, '')
 
     this._direction = 0
+    this._colors = ["#F8FFE5","#06D6A0","#1B9AAA","#FFC43D"]
     this.resetEnemyProperties()
+
   }
 
   draw() {
@@ -204,27 +206,28 @@ class Enemy extends GameObject {
     this._direction = this.getRandomInt(0, 3)
     this._radius = this.getRandomInt(25, 75)
     this._speed = this.getRandomFloat(0.3, 0.5)
+    this._color = this._colors[this.getRandomInt(0, this._colors.length - 1)]
 
     switch (this._direction) {
       case 0:
         this._x = this.getRandomInt(0, this.getCanvasWidth())
         this._y = this.getCanvasHeight() + this._radius
-        this.move = function(delta) { this._y -= this._speed * delta }
+        this.move = (delta) => { this._y -= this._speed * delta }
         break;
       case 1:
         this._x = this.getRandomInt(0, this.getCanvasWidth())
         this._y = 0 - this._radius
-        this.move = function(delta) { this._y += this._speed * delta }
+        this.move = (delta) => { this._y += this._speed * delta }
         break;
       case 2:
         this._x = 0 - this._radius
         this._y = this.getRandomInt(0, this.getCanvasHeight())
-        this.move = function(delta) { this._x += this._speed * delta }
+        this.move = (delta) => { this._x += this._speed * delta }
         break;
       case 3:
         this._x = this.getCanvasWidth() + this._radius;
         this._y = this.getRandomInt(0, this.getCanvasHeight())
-        this.move = function(delta) { this._x -= this._speed * delta }
+        this.move = (delta) => { this._x -= this._speed * delta }
         break;
     }
   }
@@ -303,8 +306,10 @@ class Game {
     this._player = new Player(context, 0.75, 50, '#F45B69')
     this._enemies = []
     this.createEnemies()
+    this._best = 0
+    this._playing = false
 
-    this._scoreElement = document.getElementById('score')
+    this._scoreElement = document.getElementById('scoreboard')
     this._overlay = document.getElementById('overlay')
 
     this._gameLoop = new GameLoop(this);
@@ -318,28 +323,27 @@ class Game {
     this._startButton = document.getElementById('start')
     this._startButton.addEventListener('click', (e) => {
       e.preventDefault()
-      this._overlay.style.visibility = 'hidden'
-      this._idle = false
-      this._scoreElement.textContent = "score: 0"
       this.resetGame()
     });
   }
 
   gameOver() {
+    this._playing = false
     this._gameLoop.stop()
     this._overlay.style.visibility = 'visible'
     this._scoreElement.textContent = " "
-
     this._overlay.innerHTML = '<div class="content-center"><h1>Game Over!</h1><p>Your score is:</p><h2 id="end-score">' + this._score  + '</h2><button id="start">Restart Game</button></div>'
     this._startButton = document.getElementById('start')
     this._startButton.addEventListener('click', (e) => {
       e.preventDefault()
-      this._overlay.style.visibility = 'hidden'
       this.resetGame()
     });
   }
 
   resetGame() {
+    this._playing = true
+    this._overlay.style.visibility = 'hidden'
+    this._idle = false
     this._difficulty = 3
     this._startTime = new Date().getTime()
     this._score = 1
@@ -348,7 +352,6 @@ class Game {
     this._enemies = []
     this.createEnemies()
     this._gameLoop.start()
-    console.log(this._enemies.length)
   }
 
   onCollision(enemy) {
@@ -374,13 +377,23 @@ class Game {
     }
   }
 
+  setBestScore() {
+    if (this._score > this._best) {
+      this._best = this._score
+    }
+  }
+
   updateScore() {
     const now = new Date().getTime()
     if (now - this._startTime > 100) {
-      this._scoreElement.textContent = "score: " + this._score
+      this._scoreElement.innerHTML = `<span class="score">score: ${this._score}</span><span class="best">best: ${this._best}</span>`
       this._score++
       this.upDifficulty()
       this._startTime = new Date().getTime()
+
+      if (this._score > this._best) {
+        this._best = this._score
+      }
     }
   }
 }
@@ -403,6 +416,10 @@ let rightArrowDown = false
 
 function handleKeyDown(e) {
   const key = e.keyCode
+
+  if (!game._playing && key == '13' || !game._playing && key == '32') {
+    game.resetGame()
+  }
 
   if (key == '38') { upArrowDown = true }
   if (key == '40') { downArrowDown = true }

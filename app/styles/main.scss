@@ -18,11 +18,23 @@ html, body {
   height: 100%;
 }
 
-#score {
+#scoreboard {
   position: absolute;
   top: 0;
   left: 0;
   padding: 10px;
+  span {
+    display: block;
+    width: 125px;
+    position: absolute;
+    top: 0;
+    &.score {
+      left: 0;
+    }
+    &.best {
+      left: 125px;
+    }
+  }
 }
 
 #overlay {
